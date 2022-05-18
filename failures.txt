@@ -1,3 +1,32 @@
 Compilation Failure:
 
-code doesn't compile yet. patches to be created 
+  CC       lib/libbison_a-fstrcmp.o
+lib/fstrcmp.c:83:12: error: too few arguments to function call, expected 2, have 1
+  buffer = gl_tls_get (buffer_key);
+           ^~~~~~~~~~~~~~~~~~~~~~~
+/fultonm/dev/bisonport/bison-3.8/lib/glthread/tls.h:140:39: note: expanded from macro 'gl_tls_get'
+     ? pthread_getspecific ((NAME).key) \
+       ~~~~~~~~~~~~~~~~~~~            ^
+/usr/include/le/pthread.h:499:15: note: 'pthread_getspecific' declared here
+      __PROTO(int,  pthread_getspecific,         (pthread_key_t , void **));
+              ^
+lib/fstrcmp.c:213:12: error: too few arguments to function call, expected 2, have 1
+  buffer = gl_tls_get (buffer_key);
+           ^~~~~~~~~~~~~~~~~~~~~~~
+/fultonm/dev/bisonport/bison-3.8/lib/glthread/tls.h:140:39: note: expanded from macro 'gl_tls_get'
+     ? pthread_getspecific ((NAME).key) \
+       ~~~~~~~~~~~~~~~~~~~            ^
+/usr/include/le/pthread.h:499:15: note: 'pthread_getspecific' declared here
+      __PROTO(int,  pthread_getspecific,         (pthread_key_t , void **));
+              ^
+lib/fstrcmp.c:214:24: error: too few arguments to function call, expected 2, have 1
+  bufmax = (uintptr_t) gl_tls_get (bufmax_key);
+                       ^~~~~~~~~~~~~~~~~~~~~~~
+/fultonm/dev/bisonport/bison-3.8/lib/glthread/tls.h:140:39: note: expanded from macro 'gl_tls_get'
+     ? pthread_getspecific ((NAME).key) \
+       ~~~~~~~~~~~~~~~~~~~            ^
+/usr/include/le/pthread.h:499:15: note: 'pthread_getspecific' declared here
+      __PROTO(int,  pthread_getspecific,         (pthread_key_t , void **));
+              ^
+3 errors generated.
+Error while processing lib/fstrcmp.c.

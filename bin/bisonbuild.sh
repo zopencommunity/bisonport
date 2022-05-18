@@ -112,7 +112,7 @@ fi
 # Setup the configuration so that the system search path looks in lib and include ahead of the standard C libraries
 #
 export CC=xlclang
-export CFLAGS="-std=gnu11 -qascii -D_OPEN_THREADS=3 -D_UNIX03_SOURCE=1 -DNSIG=39 -D_AE_BIMODAL=1 -D_XOPEN_SOURCE_EXTENDED -D_ALL_SOURCE -D_ENHANCED_ASCII_EXT=0xFFFFFFFF -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED  -qnose -qfloat=ieee -I${MY_ROOT}/${BISON_VRM},${MY_ROOT}/${BISON_VRM}/lib,/usr/include"
+export CFLAGS="-DNSIG=39 -std=gnu11 -qascii -D_XOPEN_SOURCE=600 -D_AE_BIMODAL=1 -D_ALL_SOURCE -D_ENHANCED_ASCII_EXT=0xFFFFFFFF -qnose -qfloat=ieee -I${MY_ROOT}/${BISON_VRM},${MY_ROOT}/${BISON_VRM}/lib,/usr/include"
 
 ./configure --prefix="${BISON_INSTALL_PREFIX}"
 if [ $? -gt 0 ]; then
