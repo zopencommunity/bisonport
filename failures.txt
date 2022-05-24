@@ -1,32 +1,9 @@
-Compilation Failure:
-
-  CC       lib/libbison_a-fstrcmp.o
-lib/fstrcmp.c:83:12: error: too few arguments to function call, expected 2, have 1
-  buffer = gl_tls_get (buffer_key);
-           ^~~~~~~~~~~~~~~~~~~~~~~
-/fultonm/dev/bisonport/bison-3.8/lib/glthread/tls.h:140:39: note: expanded from macro 'gl_tls_get'
-     ? pthread_getspecific ((NAME).key) \
-       ~~~~~~~~~~~~~~~~~~~            ^
-/usr/include/le/pthread.h:499:15: note: 'pthread_getspecific' declared here
-      __PROTO(int,  pthread_getspecific,         (pthread_key_t , void **));
-              ^
-lib/fstrcmp.c:213:12: error: too few arguments to function call, expected 2, have 1
-  buffer = gl_tls_get (buffer_key);
-           ^~~~~~~~~~~~~~~~~~~~~~~
-/fultonm/dev/bisonport/bison-3.8/lib/glthread/tls.h:140:39: note: expanded from macro 'gl_tls_get'
-     ? pthread_getspecific ((NAME).key) \
-       ~~~~~~~~~~~~~~~~~~~            ^
-/usr/include/le/pthread.h:499:15: note: 'pthread_getspecific' declared here
-      __PROTO(int,  pthread_getspecific,         (pthread_key_t , void **));
-              ^
-lib/fstrcmp.c:214:24: error: too few arguments to function call, expected 2, have 1
-  bufmax = (uintptr_t) gl_tls_get (bufmax_key);
-                       ^~~~~~~~~~~~~~~~~~~~~~~
-/fultonm/dev/bisonport/bison-3.8/lib/glthread/tls.h:140:39: note: expanded from macro 'gl_tls_get'
-     ? pthread_getspecific ((NAME).key) \
-       ~~~~~~~~~~~~~~~~~~~            ^
-/usr/include/le/pthread.h:499:15: note: 'pthread_getspecific' declared here
-      __PROTO(int,  pthread_getspecific,         (pthread_key_t , void **));
-              ^
-3 errors generated.
-Error while processing lib/fstrcmp.c.
+Making check in .
+make[2]: Entering directory '/fultonm/dev/bisonport/bison-3.8'
+  GEN      doc/bison.help
+/fultonm/prod/make/bin/make   examples/c/calc/calc examples/c/glr/c++-types  examples/c/mfcalc/mfcalc examples/c/pushcalc/calc  examples/c/rpcalc/rp
+calc  examples/c++/glr/c++-types examples/c++/simple examples/c++/variant examples/c++/variant-11 examples/d/calc/calc examples/d/simple/calc exampl
+es/java/calc/Calc.class examples/java/simple/Calc.class ./tests/bison tests/atconfig tests/atlocal
+make[3]: Entering directory '/fultonm/dev/bisonport/bison-3.8'
+  YACC     examples/c/calc/calc.c
+trap: ./build-aux/ylwrap 168: FSUM7327 signal number 13 not conventional
