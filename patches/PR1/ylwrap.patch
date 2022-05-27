@@ -1,0 +1,13 @@
+diff --git a/build-aux/ylwrap b/build-aux/ylwrap
+index d153336..e64beb0 100755
+--- a/build-aux/ylwrap
++++ b/build-aux/ylwrap
+@@ -165,7 +165,7 @@ dirname=ylwrap$$
+ do_exit="cd '`pwd`' && rm -rf $dirname > /dev/null 2>&1;"' (exit $ret); exit $ret'
+ trap "ret=129; $do_exit" 1
+ trap "ret=130; $do_exit" 2
+-trap "ret=141; $do_exit" 13
++trap "ret=141; $do_exit" SIGPIPE 
+ trap "ret=143; $do_exit" 15
+ mkdir $dirname || exit 1
+ 
