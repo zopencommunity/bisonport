@@ -15,7 +15,7 @@ export ZOPEN_TARBALL_DEPS="curl gzip make m4 perl autoconf"
 export ZOPEN_GIT_URL="https://git.savannah.gnu.org/git/bison.git"
 export ZOPEN_GIT_DEPS="git make m4 perl autoconf automake help2man makeinfo xz"
 
-export ZOPEN_EXTRA_CFLAGS="-g"
+export ZOPEN_EXTRA_CFLAGS=""
 export ZOPEN_EXTRA_LDFLAGS=""
 
 if [ "${ZOPEN_TYPE}x" = "TARBALLx" ]; then
