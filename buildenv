@@ -15,3 +15,9 @@ export ZOPEN_EXTRA_LDFLAGS=""
 if [ "${ZOPEN_TYPE}x" = "TARBALLx" ]; then
 	export ZOPEN_BOOTSTRAP=skip
 fi
+
+zopen_check_results()
+{
+  return 3 # non-functional
+}
+
