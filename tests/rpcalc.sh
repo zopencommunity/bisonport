@@ -17,5 +17,4 @@ rpcalcdir=$(find ../ -name rpcalc -type d | head -1)
 cd ${rpcalcdir} || exit 99
 
 #(export _CEE_RUNOPTS="DYNDUMP TRAP(OFF) $_CEE_RUNOPTS"; echo "4 9 +" | make run)
-dbx /u/fultonm/zot/prod/bison/bin/bison -o y.tab.c --defines -Werror -Wall,dangling-alias --report=all --no-lines /fultonm/zot/dev/bisonport/bison-3.8/examples/c/calc/calc.y 
 
