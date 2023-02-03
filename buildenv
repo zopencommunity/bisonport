@@ -14,24 +14,24 @@ export ZOPEN_CHECK_OPTS='-i check'
 
 zopen_check_results()
 {
-#============================================================================
-#Testsuite summary for GNU bison 
-#============================================================================
-# TOTAL: 121
-# PASS:  58
-# SKIP:  52
-# XFAIL: 0
-# FAIL:  11
-# XPASS: 0
-# ERROR: 0
-#============================================================================
+## ------------- ##
+## Test results. ##
+## ------------- ##
+
+#ERROR: 745 tests were run,
+#714 failed unexpectedly.
+#27 tests were skipped.
+## -------------------------- ##
+## testsuite.log was created. ##
+## -------------------------- ##
+
   dir="$1"
   pfx="$2"
   chk="$1/$2_check.log"
 
-  totalTests=$(grep '# TOTAL:' $chk | awk '{ print $3 }')
-  actualFailures=$(grep '# FAIL:' $chk | awk '{ print $3 }')
-  expectedFailures=11
+  totalTests=$(grep '^ERROR:' $chk | awk '{ print $2 }')
+  actualFailures=$(grep 'failed unexpectedly' $chk | awk '{ print $1 }')
+  expectedFailures=714
   echo "actualFailures:${actualFailures}"
   echo "totalTests:${totalTests}"
   echo "expectedFailures:${expectedFailures}"
