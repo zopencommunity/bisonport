@@ -3,7 +3,7 @@ export ZOPEN_TARBALL_URL="https://ftp.gnu.org/gnu/bison/bison-3.8.tar.gz"
 export ZOPEN_TARBALL_DEPS="curl gzip make m4 perl autoconf zoslib"
 
 export ZOPEN_GIT_URL="https://git.savannah.gnu.org/git/bison.git"
-export ZOPEN_GIT_DEPS="git make m4 perl autoconf automake help2man makeinfo xz"
+export ZOPEN_GIT_DEPS="git make m4 perl autoconf automake help2man texinfo xz"
 
 if [ "${ZOPEN_TYPE}x" = "TARBALLx" ]; then
 	export ZOPEN_BOOTSTRAP=skip
