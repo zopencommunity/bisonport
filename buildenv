@@ -20,7 +20,7 @@ zopen_check_results()
 ## ------------- ##
 
 #ERROR: 745 tests were run,
-#714 failed unexpectedly.
+#12 failed unexpectedly.
 #27 tests were skipped.
 ## -------------------------- ##
 ## testsuite.log was created. ##
@@ -32,7 +32,7 @@ zopen_check_results()
 
   totalTests=$(grep '^ERROR:' $chk | awk '{ print $2 }')
   actualFailures=$(grep 'failed unexpectedly' $chk | awk '{ print $1 }')
-  expectedFailures=714
+  expectedFailures=12
   echo "actualFailures:${actualFailures}"
   echo "totalTests:${totalTests}"
   echo "expectedFailures:${expectedFailures}"
