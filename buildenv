@@ -38,3 +38,7 @@ zopen_check_results()
   echo "expectedFailures:${expectedFailures}"
 }
 
+zopen_get_version()
+{
+  ./src/bison --version | head -1 | awk '{ print $4 }'
+}
