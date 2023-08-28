@@ -42,3 +42,9 @@ zopen_get_version()
 {
   ./src/bison --version | head -1 | awk '{ print $4 }'
 }
+
+zopen_append_to_zoslib_env() {
+cat <<EOF
+BISON_PKGDATADIR|set|PROJECT_ROOT/share/bison
+EOF
+}
