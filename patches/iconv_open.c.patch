@@ -1,0 +1,16 @@
+diff --git a/lib/iconv_open.c b/lib/iconv_open.c
+index e573556..3761e76 100644
+--- a/lib/iconv_open.c
++++ b/lib/iconv_open.c
+@@ -44,8 +44,10 @@
+ 
+ iconv_t
+ rpl_iconv_open (const char *tocode, const char *fromcode)
+-#undef iconv_open
+ {
++#undef iconv_open
++  /* Declare the system iconv_open function */
++  extern iconv_t iconv_open (const char *, const char *);
+   char fromcode_upper[32];
+   char tocode_upper[32];
+   char *fromcode_upper_end;
