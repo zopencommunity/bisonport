@@ -1,0 +1,18 @@
+--- a/data/skeletons/glr.c
++++ b/data/skeletons/glr.c
+@@ -258,7 +258,15 @@ b4_percent_code_get[]dnl
+ [#include <stddef.h>
+ #include <stdint.h>
+ #include <stdio.h>
++
++/* Prevent zoslib asm label conflicts by declaring malloc/free before including stdlib.h */
++#if defined(__MVS__) && defined(__ZOSLIB_H)
++void *malloc (size_t);
++void free (void *);
++#endif
++
+ #include <stdlib.h>
++
+ #include <string.h>
+ 
+ ]b4_c99_int_type_define[
