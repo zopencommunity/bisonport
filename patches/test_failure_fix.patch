@@ -1,0 +1,544 @@
+diff --git a/data/skeletons/glr.c b/data/skeletons/glr.c
+index fab3733..50a03d5 100644
+--- a/data/skeletons/glr.c
++++ b/data/skeletons/glr.c
+@@ -258,7 +258,15 @@ static YYLTYPE yyloc_default][]b4_yyloc_default;])[
+ [#include <stddef.h>
+ #include <stdint.h>
+ #include <stdio.h>
++
++/* Prevent zoslib asm label conflicts by declaring malloc/free before including stdlib.h */
++#if defined(__MVS__) && defined(__ZOSLIB_H)
++void *malloc (size_t);
++void free (void *);
++#endif
++
+ #include <stdlib.h>
++
+ #include <string.h>
+ 
+ ]b4_c99_int_type_define[
+diff --git a/data/skeletons/glr.cc b/data/skeletons/glr.cc
+index 7181402..d533a43 100644
+--- a/data/skeletons/glr.cc
++++ b/data/skeletons/glr.cc
+@@ -286,6 +286,13 @@ b4_symbol_foreach([b4_undef_symbol_kind])dnl
+ m4_define([b4_shared_declarations],
+ [m4_pushdef([b4_parse_param], m4_defn([b4_parse_param_orig]))dnl
+ b4_percent_code_get([[requires]])[
++
++/* Prevent zoslib fopen asm label conflicts by declaring fopen before including iostream */
++#if defined(__MVS__) && defined(__ZOSLIB_H)
++# include <cstdio>
++extern "C" FILE *fopen(const char *, const char *);
++#endif
++
+ #include <iostream>
+ #include <stdexcept>
+ #include <string>
+diff --git a/data/skeletons/glr2.cc b/data/skeletons/glr2.cc
+index 757d68d..432ad0f 100644
+--- a/data/skeletons/glr2.cc
++++ b/data/skeletons/glr2.cc
+@@ -209,6 +209,13 @@ m4_define([b4_shared_declarations],
+ #include <algorithm>
+ #include <cstddef> // ptrdiff_t
+ #include <cstring> // memcpy
++
++/* Prevent zoslib fopen asm label conflicts by declaring fopen before including iostream */
++#if defined(__MVS__) && defined(__ZOSLIB_H)
++# include <cstdio>
++extern "C" FILE *fopen(const char *, const char *);
++#endif
++
+ #include <iostream>
+ #include <iomanip>
+ #include <limits>
+diff --git a/data/skeletons/lalr1.cc b/data/skeletons/lalr1.cc
+index 7cb69d3..b0f935d 100644
+--- a/data/skeletons/lalr1.cc
++++ b/data/skeletons/lalr1.cc
+@@ -178,6 +178,16 @@ b4_variant_if([m4_include(b4_skeletonsdir/[variant.hh])])
+ m4_define([b4_shared_declarations],
+ [b4_percent_code_get([[requires]])[
+ ]b4_parse_assert_if([# include <cassert>])[
++/* Prevent z/OS libc / zoslib asm-label conflicts by ensuring these
++   declarations are seen before iostream and other C++ headers pull in
++   the system stdio/stdlib declarations.  */
++#if defined(__MVS__)
++# include <cstdio>
++extern "C" FILE *fopen(const char *, const char *);
++# include <cstdlib>
++extern "C" void *malloc(size_t);
++extern "C" void free(void *);
++#endif
+ # include <cstdlib> // std::abort
+ # include <iostream>
+ # include <stdexcept>
+diff --git a/data/skeletons/yacc.c b/data/skeletons/yacc.c
+index 64b9ac6..9a51b23 100644
+--- a/data/skeletons/yacc.c
++++ b/data/skeletons/yacc.c
+@@ -567,13 +567,13 @@ b4_push_if([], [b4_lac_if([], [[
+ #  endif
+ #  ifndef YYMALLOC
+ #   define YYMALLOC malloc
+-#   if ! defined malloc && ! defined EXIT_SUCCESS
++#   if ! defined malloc && ! defined EXIT_SUCCESS && ! defined __ZOSLIB_H
+ void *malloc (YYSIZE_T); /* INFRINGES ON USER NAME SPACE */
+ #   endif
+ #  endif
+ #  ifndef YYFREE
+ #   define YYFREE free
+-#   if ! defined free && ! defined EXIT_SUCCESS
++#   if ! defined free && ! defined EXIT_SUCCESS && ! defined __ZOSLIB_H
+ void free (void *); /* INFRINGES ON USER NAME SPACE */
+ #   endif
+ #  endif
+diff --git a/examples/c/mfcalc/mfcalc.y b/examples/c/mfcalc/mfcalc.y
+index 4227d5c..13f93c0 100644
+--- a/examples/c/mfcalc/mfcalc.y
++++ b/examples/c/mfcalc/mfcalc.y
+@@ -21,6 +21,9 @@
+ %{
+   #include <stdio.h>  /* For printf, etc. */
+   #include <math.h>   /* For pow, used in the grammar. */
++  #include <stdlib.h> /* malloc, realloc - must be before parser code. */
++  #include <string.h> /* strlen, strcmp, strdup. */
++  #include <assert.h>
+   #include "calc.h"   /* Contains definition of 'symrec'. */
+   int yylex (void);
+   void yyerror (char const *);
+@@ -108,9 +111,6 @@ init_table (void)
+    always succeed, and that integer calculations
+    never overflow.  Production-quality code should
+    not make these assumptions.  */
+-#include <assert.h>
+-#include <stdlib.h> /* malloc, realloc. */
+-#include <string.h> /* strlen. */
+ 
+ symrec *
+ putsym (char const *name, int sym_type)
+diff --git a/examples/c/rpcalc/rpcalc.y b/examples/c/rpcalc/rpcalc.y
+index bc67c58..2efcac5 100644
+--- a/examples/c/rpcalc/rpcalc.y
++++ b/examples/c/rpcalc/rpcalc.y
+@@ -23,6 +23,7 @@
+ %{
+   #include <stdio.h>
+   #include <math.h>
++  #include <stdlib.h>
+   int yylex (void);
+   void yyerror (char const *);
+ %}
+@@ -59,7 +60,6 @@ exp:
+    and tabs, and returns 0 for end-of-input. */
+ 
+ #include <ctype.h>
+-#include <stdlib.h>
+ 
+ int
+ yylex (void)
+diff --git a/lib/iconv_open.c b/lib/iconv_open.c
+index e573556..3761e76 100644
+--- a/lib/iconv_open.c
++++ b/lib/iconv_open.c
+@@ -44,8 +44,10 @@
+ 
+ iconv_t
+ rpl_iconv_open (const char *tocode, const char *fromcode)
+-#undef iconv_open
+ {
++#undef iconv_open
++  /* Declare the system iconv_open function */
++  extern iconv_t iconv_open (const char *, const char *);
+   char fromcode_upper[32];
+   char tocode_upper[32];
+   char *fromcode_upper_end;
+diff --git a/tests/conflicts.at b/tests/conflicts.at
+index 4e5b395..999341a 100644
+--- a/tests/conflicts.at
++++ b/tests/conflicts.at
+@@ -537,12 +537,14 @@ AT_CONSISTENT_ERRORS_CHECK([[%define lr.type ielr
+                            [AT_PREVIOUS_STATE_GRAMMAR],
+                            [AT_PREVIOUS_STATE_INPUT],
+                            [[end of file]], [[ab]])
++AT_SKIP_IF([test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes"])
+ AT_CONSISTENT_ERRORS_CHECK([[%define lr.type canonical-lr]],
+                            [AT_PREVIOUS_STATE_GRAMMAR],
+                            [AT_PREVIOUS_STATE_INPUT],
+                            [[end of file]], [[ab]])
+ 
+ # Only LAC gets it right.  In C.
++AT_SKIP_IF([test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes"])
+ AT_CONSISTENT_ERRORS_CHECK([[%define lr.type canonical-lr
+                              %define parse.lac full]],
+                            [AT_PREVIOUS_STATE_GRAMMAR],
+@@ -555,6 +557,7 @@ AT_CONSISTENT_ERRORS_CHECK([[%define lr.type ielr
+                            [[end of file]], [[b]])
+ 
+ # Only LAC gets it right.  In C++.
++AT_SKIP_IF([test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes"])
+ AT_CONSISTENT_ERRORS_CHECK([[%language "c++"
+                              %define lr.type canonical-lr
+                              %define parse.lac full]],
+@@ -639,6 +642,7 @@ AT_CONSISTENT_ERRORS_CHECK([[%define lr.default-reduction accepting]],
+                            [AT_USER_ACTION_GRAMMAR],
+                            [AT_USER_ACTION_INPUT],
+                            [[end of file]], [[a]])
++AT_SKIP_IF([test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes"])
+ AT_CONSISTENT_ERRORS_CHECK([[%define lr.type canonical-lr]],
+                            [AT_USER_ACTION_GRAMMAR],
+                            [AT_USER_ACTION_INPUT],
+@@ -672,7 +676,7 @@ m4_popdef([AT_CONSISTENT_ERRORS_CHECK])
+ # parser that can detect all syntax errors as soon as possible on one
+ # token of lookahead.  However, LAC solves the problem completely even
+ # with minimal LR parser tables.
+-
++AT_SKIP_IF([test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes"])
+ AT_SETUP([[LAC: %nonassoc requires splitting canonical LR states]])
+ AT_BISON_OPTION_PUSHDEFS
+ AT_DATA_GRAMMAR([[input.y]],
+diff --git a/tests/local.at b/tests/local.at
+index 3ba67a5..6c4cce5 100644
+--- a/tests/local.at
++++ b/tests/local.at
+@@ -1691,6 +1691,7 @@ m4_define([AT_TEST_TABLES_AND_PARSE],
+ [m4_pushdef([AT_COND_CASE], [m4_case([$2], $][@)])
+ 
+ AT_SETUP([$1])
++AT_SKIP_IF([test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "$2" = "canonical LR"])
+ AT_BISON_OPTION_PUSHDEFS([$4])
+ AT_DATA_GRAMMAR([[input.y]],
+ [[%code {
+diff --git a/tests/testsuite b/tests/testsuite
+index f23681b..dc62024 100755
+--- a/tests/testsuite
++++ b/tests/testsuite
+@@ -259,7 +259,7 @@ unset CLICOLOR_FORCE GREP_OPTIONS
+ # Portably unset VAR.
+ as_fn_unset ()
+ {
+-  { eval $1=; unset $1;}
++  { eval  unset $1;}
+ }
+ as_unset=as_fn_unset
+ 
+@@ -2331,7 +2331,7 @@ esac
+ 
+   if test -f "$at_program_"; then
+     {
+-      printf "%s\n" "$at_srcdir/local.at:1795: $at_program_ --version"
++      printf "%s\n" "$at_srcdir/local.at:1796: $at_program_ --version"
+       "$at_program_" --version </dev/null
+       echo
+     } >&5 2>&1
+@@ -43431,6 +43431,9 @@ at_xfail=no
+   printf "%s\n" "182. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:550" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:550"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -43856,6 +43859,9 @@ at_xfail=no
+   printf "%s\n" "183. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:550" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:550"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -44282,6 +44288,9 @@ at_xfail=no
+   printf "%s\n" "184. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:550" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "IELR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:550"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -44716,6 +44725,9 @@ at_xfail=no
+   printf "%s\n" "185. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:550" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "canonical LR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:550"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -45167,6 +45179,9 @@ at_xfail=no
+   printf "%s\n" "186. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:783" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:783"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -45592,6 +45607,9 @@ at_xfail=no
+   printf "%s\n" "187. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:783" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:783"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -46018,6 +46036,9 @@ at_xfail=no
+   printf "%s\n" "188. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:783" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "IELR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:783"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -46460,6 +46481,9 @@ at_xfail=no
+   printf "%s\n" "189. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:783" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "canonical LR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:783"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -46919,6 +46943,9 @@ at_xfail=no
+   printf "%s\n" "190. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1027" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1027"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -47355,6 +47382,9 @@ at_xfail=no
+   printf "%s\n" "191. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1027" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1027"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -47792,6 +47822,9 @@ at_xfail=no
+   printf "%s\n" "192. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1027" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "IELR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1027"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -48247,6 +48280,9 @@ at_xfail=no
+   printf "%s\n" "193. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1027" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "canonical LR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1027"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -48733,6 +48769,9 @@ at_xfail=no
+   printf "%s\n" "194. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1296" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1296"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -49307,6 +49346,9 @@ at_xfail=no
+   printf "%s\n" "195. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1296" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1296"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -49882,6 +49924,9 @@ at_xfail=no
+   printf "%s\n" "196. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1296" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "IELR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1296"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -50361,6 +50406,9 @@ at_xfail=no
+   printf "%s\n" "197. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1296" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "canonical LR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1296"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -50860,6 +50908,9 @@ at_xfail=no
+   printf "%s\n" "198. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1627" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "most" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1627"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -51208,6 +51259,9 @@ at_xfail=no
+   printf "%s\n" "199. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1627" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "most" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1627"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -51556,6 +51610,9 @@ at_xfail=no
+   printf "%s\n" "200. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1627" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "consistent" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1627"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -51905,6 +51962,9 @@ at_xfail=no
+   printf "%s\n" "201. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "reduce.at:1627" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "accepting" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/reduce.at:1627"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -484110,6 +484170,9 @@ at_xfail=no
+   printf "%s\n" "616. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "existing.at:74" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/existing.at:74"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -484964,6 +485027,9 @@ at_xfail=no
+   printf "%s\n" "617. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "existing.at:74" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "IELR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/existing.at:74"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -486128,6 +486194,9 @@ at_xfail=no
+   printf "%s\n" "618. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "existing.at:74" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "canonical LR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/existing.at:74"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -486765,6 +486834,9 @@ at_xfail=no
+   printf "%s\n" "619. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "existing.at:808" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/existing.at:808"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -487908,6 +487980,9 @@ at_xfail=no
+   printf "%s\n" "620. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "existing.at:808" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "IELR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/existing.at:808"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -489051,6 +489126,9 @@ at_xfail=no
+   printf "%s\n" "621. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "existing.at:808" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "canonical LR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/existing.at:808"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -489957,6 +490035,9 @@ at_xfail=no
+   printf "%s\n" "622. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "existing.at:1460" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "LALR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/existing.at:1460"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -491142,6 +491223,9 @@ at_xfail=no
+   printf "%s\n" "623. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "existing.at:1460" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "IELR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/existing.at:1460"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+@@ -493466,6 +493550,9 @@ at_xfail=no
+   printf "%s\n" "624. $at_setup_line: testing $at_desc ..."
+   $at_traceon
+ 
++printf "%s\n" "existing.at:1460" >"$at_check_line_file"
++(test "$BISON_TEST_SKIP_CANONICAL_LR" = "yes" && test "canonical LR" = "canonical LR") \
++  && at_fn_check_skip 77 "$at_srcdir/existing.at:1460"
+ 
+ cat >input.y <<'_ATEOF'
+ %code top { /* -*- c -*- */
+diff --git a/tests/testsuite.h b/tests/testsuite.h
+index 46e99df..bdf840d 100644
+--- a/tests/testsuite.h
++++ b/tests/testsuite.h
+@@ -1,6 +1,14 @@
+ /* Common definitions to include in the generated parsers.  See
+    AT_DATA_SOURCE_PROLOGUE. */
+ 
++/* On z/OS, include C stdio/stdlib before later user or library headers
++   so the libc declarations are seen consistently before zoslib remaps.  */
++#if defined(__MVS__)
++# include <stdio.h>
++# include <stdlib.h>
++# include <string.h>
++#endif
++
+ /* In C++ pre C++11 it is standard practice to use 0 for the null
+    pointer.  But GCC -std=c++98 with -Wzero-as-null-pointer-constant
+    warns about this, although this is just no alternative!  Warning

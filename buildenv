@@ -16,6 +16,12 @@ export ZOPEN_COMP=CLANG
 export ZOPEN_CHECK_OPTS="-i check TESTSUITEFLAGS=\"-j\$ZOPEN_NUM_JOBS\""
 export ZOPEN_EXTRA_CFLAGS="-fno-builtin"
 
+zopen_pre_check()
+{
+  # Set environment variable to skip memory-intensive canonical-lr tests
+  export BISON_TEST_SKIP_CANONICAL_LR=yes
+}
+
 zopen_check_results()
 {
 ## ------------- ##
